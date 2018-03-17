@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: LogEC2InstanceStateChange
+
+Resources:
+
+  test:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: LogEc2InstanceChangeState.handler
+      Runtime: nodejs6.10
+      Environment:
+        Variables:
+          elasticsearch_endpoint: https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com
