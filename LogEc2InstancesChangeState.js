@@ -5,7 +5,7 @@ var elasticsearch = require('elasticsearch');
 
 var myTag = ["Name", "Environment", "IT Owner", "Business Owner", "Support", "Role", "AppName", "Notes", "StopDailyTime", "StartDailytime", "OpeningDays", "KillDate", "Country", "Backup", "BillingCode", "DR"];
 
-var ESIndex = {"index":{"_index": "EC2StartStopLogs","_type":"EC2StartStopLog","_id":1}};
+var ESIndex = {"index":{"_index": "ec2startstoplogs","_type":"EC2StartStopLog","_id":1}};
 
 
 exports.handler = (event, context, callback) => {
@@ -61,9 +61,12 @@ exports.handler = (event, context, callback) => {
         requestTimeout: 30000,
     }, function(error) {
         if (error) {
-            console.error('elasticsearch cluster is down!');
+            console.error('Elasticsearch cluster is down !!');
         } else {
-            console.log('Everything is ok');
+            console.log('Elasticsearch cluster is reachable !!');
+            elasticclient.index(mydata, function(err,resp,status) {
+                console.log(resp);
+            });
         }
     });
  

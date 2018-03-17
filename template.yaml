@@ -7,7 +7,7 @@ Resources:
   test:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: LogEc2InstanceChangeState.handler
+      Handler: LogEc2InstancesChangeState.handler
       Runtime: nodejs6.10
       Environment:
         Variables:
