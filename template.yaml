@@ -8,8 +8,21 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: "LogEc2InstancesChangeState"
+      Description: "Log instances change state in ES"
+      Runtime: "nodejs6.10"
+      Timeout: 120
       Handler: LogEc2InstancesChangeState.handler
       Runtime: nodejs6.10
+      Role:
+        Fn::GetAtt: 
+              - "lambdarole"
+              - "Arn"
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-e2af4e98
+        SubnetIds:
+          - subnet-62e00f2a
+          - subnet-773b1f2c
       Environment:
         Variables:
           elasticsearch_endpoint: https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com
@@ -47,6 +60,9 @@ Resources:
               - ec2:DescribeInstances
               - ec2:DescribeTags
               - ec2:DescribeInstanceStatus
+              - ec2:CreateNetworkInterface
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DeleteNetworkInterface
             Resource: "*"
           - Effect: Allow
             Action:
