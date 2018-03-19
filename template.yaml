@@ -1,14 +1,97 @@
 AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: LogEC2InstanceStateChange
+Description: Log of EC2 Instances State Change in Elasticsearch
 
 Resources:
 
-  test:
+  LogEc2InstancesChangeState:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: "LogEc2InstancesChangeState"
       Handler: LogEc2InstancesChangeState.handler
       Runtime: nodejs6.10
       Environment:
         Variables:
           elasticsearch_endpoint: https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com
+          
+  lambdarole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-LogEc2InstancesChangeState
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+
+  lambdaPolicies:
+    Type: AWS::IAM::Policy
+    Properties :
+      PolicyName: "lambda-LogEc2InstancesChangeState"
+      Roles: 
+        - Ref: "lambdarole"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ec2:DescribeInstances
+              - ec2:DescribeTags
+              - ec2:DescribeInstanceStatus
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - es:ESHttpGet
+              - es:ListDomainNames
+              - es:ESHttpPost
+              - es:ESHttpPut
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - es:*
+            Resource: "arn:aws:es:eu-west-1:716783647419:domain/opstat"
+            
+  EventRuleEc2: 
+    Type: "AWS::Events::Rule"
+    Properties:
+      Name: "OpsStats-LogEc2InstancesChangestate"
+      Description: "EC2 Instances State Changes"
+      EventPattern: 
+        source: 
+          - "aws.ec2"
+        detail-type: 
+          - "EC2 Instance State-change Notification"
+        detail: 
+          state: 
+            - "runnig"
+            - "stopped"
+            - "terminated"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "LogEc2InstancesChangeState"
+              - "Arn"
+          Id: "LogEc2InstancesChangeState"  
+        
+  PermissionForEventsToInvokeLambda: 
+    Type: "AWS::Lambda::Permission"
+    Properties: 
+      FunctionName: 
+        Ref: "LogEc2InstancesChangeState"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "EventRuleEc2"
+          - "Arn"
