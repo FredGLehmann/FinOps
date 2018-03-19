@@ -1,0 +1,6 @@
+19/03
+	LAMBDA : 
+	- pas de descritpion
+	- pas de VPC défini
+	ROLE :
+	- pas de description
