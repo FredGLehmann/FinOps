@@ -1,0 +1,55 @@
+{
+  "service": {
+    "service": "LogEc2InstancesChangestate",
+    "serviceObject": {
+      "name": "LogEc2InstancesChangestate"
+    },
+    "provider": {
+      "variableSyntax": "\\${([ ~:a-zA-Z0-9._'\",\\-\\/\\(\\)]+?)}",
+      "name": "aws",
+      "runtime": "nodejs6.10",
+      "esIndex": "${{opt:esIndex}",
+      "role": "Lambdarole",
+      "logRetentionInDays": 1,
+      "versionFunctions": true,
+      "remoteFunctionData": null,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket"
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket"
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      }
+    },
+    "functions": {}
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/LogEc2InstancesChangestate/dev/1521649854291-2018-03-21T16:30:54.291Z",
+    "artifact": ""
+  }
+}

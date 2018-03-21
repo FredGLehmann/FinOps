@@ -1,0 +1,7 @@
+19/03
+	LAMBDA : 
+	- pas de descritpion : ok le 19/3
+	- pas de VPC défini : ok le 19/3
+	- pas de role defini : ok le 19/3
+	ROLE :
+	- pas de description - Pas de solution
