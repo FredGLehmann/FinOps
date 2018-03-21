@@ -7,10 +7,10 @@
     "time": "2018-03-15T19:02:56Z",
     "region": "eu-west-1",
     "resources": [
-        "arn:aws:ec2:eu-west-1:716783647419:instance/i-0002e9de317d7488e"
+        "arn:aws:ec2:eu-west-1:716783647419:instance/i-039384f78c37a2c2e"
     ],
     "detail": {
-        "instance-id": "i-0002e9de317d7488e",
+        "instance-id": "i-039384f78c37a2c2e",
         "state": "stopped"
     }
 }
