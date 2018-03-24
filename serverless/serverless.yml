@@ -1,0 +1,122 @@
+service: LogEc2InstancesState
+
+package:
+  include:
+    - ../src/LogEc2InstancesChangeState.js
+    
+# The provider are the Global parameters
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: ${opt:stage, 'dev'}
+  accountId: ${opt:accountId, '716783647419'}
+  region: ${opt:region, 'eu-west-1'}
+  esEndpoint: ${opt:esEndpoint, 'https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com'}
+  esIndex: ${opt:esIndex, 'ec2startstoplogs'}
+  esType: ${opt:esType, 'ec2startstoplog'}
+  author: ${opt:author, 'frederic.lehmann@transdev.com'}
+  logRetentionInDays: 1
+  deploymentBucket:
+    name: pprod-deploy
+  vpc:
+    securityGroupIds:
+      - sg-6aac4d10     # Commonsrv DEV03
+    subnetIds:
+      - subnet-62e00f2a # 1a private
+      - subnet-773b1f2c # 1b private
+      
+      
+resources:
+  
+  Resources:
+    #Creation of the CloudWatch Log Group
+    LogEc2InstancesChangeStateLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: LogEc2InstancesChangeState
+        RetentionInDays: ${self:provider.logRetentionInDays}
+        
+    # Creation of the role
+    lambdaLogEc2instancesChangeStaterole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: lambda-LogEc2InstancesChangeState
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+        Policies:
+          - PolicyName: lambda_execution_stream # Policy for Log Group
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - "*"
+          - PolicyName: lambdaAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource:
+                    - "arn:aws:lambda:eu-west-1:716783647419:function:LogEc2InstancesChangeState"
+          - PolicyName: ec2rights # Policy for rights on EC2
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:          
+                - Effect: Allow
+                  Action:
+                    - ec2:DescribeInstances
+                    - ec2:DescribeTags
+                    - ec2:DescribeInstanceStatus
+                    - ec2:CreateNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DeleteNetworkInterface
+                  Resource:
+                    - "*"
+          - PolicyName: esgenericrights # Policy on Elasticsearch
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:       
+                - Effect: Allow
+                  Action:
+                    - es:ESHttpGet
+                    - es:ListDomainNames
+                    - es:ESHttpPost
+                    - es:ESHttpPut
+                  Resource:
+                    - "*"
+          - PolicyName: esaccess
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:                 
+                - Effect: Allow
+                  Action:
+                    - es:*
+                  Resource:
+                    - arn:aws:es:${self:provider.region}:${self:provider.accountId}:domain/opstat
+
+functions:
+    LogEc2InstancesChangeState:
+      name: LogEc2InstancesChangeState
+      description: Log instances change state in ES
+      timeout: 120
+      handler: src/LogEc2InstancesChangeState.handler
+      tags:
+        project: FinOps
+        IT Owner: ${self:provider.author}
+      environment:
+        elasticsearch_endpoint: ${self:provider.esEndpoint}
+        elasticsearch_index: ${self:provider.esIndex}
+        elasticsearch_type: ${self:provider.esType}
