@@ -1,1 +1,3 @@
 git_ignore
+serverless/.serverless/*
+serverless/.serverless/.*
