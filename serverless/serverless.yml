@@ -3,6 +3,7 @@ service: LogEc2InstancesState
 package:
   include:
     - ../src/LogEc2InstancesChangeState.js
+    - ../src/node_modules/**
     
 # The provider are the Global parameters
 provider:
@@ -14,7 +15,7 @@ provider:
   esEndpoint: ${opt:esEndpoint, 'https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com'}
   esIndex: ${opt:esIndex, 'ec2startstoplogs'}
   esType: ${opt:esType, 'ec2startstoplog'}
-  author: ${opt:author, 'frederic.lehmann@transdev.com'}
+  author: ${opt:author}
   logRetentionInDays: 1
   deploymentBucket:
     name: pprod-deploy
@@ -106,7 +107,39 @@ resources:
                     - es:*
                   Resource:
                     - arn:aws:es:${self:provider.region}:${self:provider.accountId}:domain/opstat
-
+    
+    EventRule: 
+      Type: "AWS::Events::Rule"
+      Properties: 
+        Name: "LogEc2InstancesChangeState"
+        Description: "Rule for Loging Ec2 Instances change State in ES"
+        EventPattern: 
+          source: 
+            - "aws.ec2"
+          detail-type: 
+            - "EC2 Instance State-change Notification"
+          detail: 
+            state: 
+              - "stopping"
+              - "runnning"
+              - "terminated"
+        State: "ENABLED"
+        Targets: 
+          - 
+            Arn: arn:aws:lambda:eu-west-1:716783647419:function:LogEc2InstancesChangeState
+            Id: "lambda-LogEc2InstancesChangeState"
+          
+    PermissionForEventsToInvokeLambda: 
+      Type: "AWS::Lambda::Permission"
+      Properties: 
+        FunctionName: LogEc2InstancesChangeState
+        Action: "lambda:InvokeFunction"
+        Principal: "events.amazonaws.com"
+        SourceArn: 
+          Fn::GetAtt: 
+            - "EventRule"
+            - "Arn"      
+    
 functions:
     LogEc2InstancesChangeState:
       name: LogEc2InstancesChangeState
@@ -115,7 +148,7 @@ functions:
       handler: src/LogEc2InstancesChangeState.handler
       tags:
         project: FinOps
-        IT Owner: ${self:provider.author}
+        ITOwner: ${self:provider.author}
       environment:
         elasticsearch_endpoint: ${self:provider.esEndpoint}
         elasticsearch_index: ${self:provider.esIndex}
