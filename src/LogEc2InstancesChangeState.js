@@ -16,12 +16,16 @@ exports.handler = (event, context, callback) => {
     
     console.log('Received event:', JSON.stringify(event, null, 2));
     
+    /* Get account number, region and event time */
+    mydata.body.account=event.account;
+    mydata.body.region=event.region;
+    mydata.body.time=event.time;
+    
     /* in events replace instance-id by instance id, because the "-" doesn't work well */
     var instancedetails = JSON.parse(JSON.stringify(event.detail).replace("-",""));
     /* get instance id and state*/
     mydata.body.instanceid = instancedetails.instanceid;
     mydata.body.instancestate = instancedetails.state;
-    console.log(mydata);
     
     /* put instanceid in another JSON format for descrbeinstance function
      var params = {
@@ -39,7 +43,7 @@ exports.handler = (event, context, callback) => {
         else {
             /* get the instance type */
             mydata.body.instancetype = data.Reservations[0].Instances[0].InstanceType;
-            console.log(mydata)
+
             /* get all the instance tags except all the unknown one*/
             for (var i=0;i<data.Reservations[0].Instances[0].Tags.length;i++) {
                 for (var j=0;j<myTag.length;j++) {
@@ -49,6 +53,7 @@ exports.handler = (event, context, callback) => {
                 }
             }
 
+            /* write the data send to ES in the log */
             console.log(mydata);
             
             var elasticclient = new elasticsearch.Client({
