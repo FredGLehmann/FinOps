@@ -1,0 +1,321 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "LogEc2InstancesChangeStateLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "LogEc2InstancesChangeState",
+        "RetentionInDays": 1
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "dev",
+                  "LogEc2InstancesState",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/LogEc2InstancesChangeState:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/LogEc2InstancesChangeState:*:*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "LogEc2InstancesState",
+              "dev",
+              "eu-west-1",
+              "lambdaRole"
+            ]
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+        ]
+      }
+    },
+    "LogEc2InstancesChangeStateLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "pprod-deploy",
+          "S3Key": "serverless/LogEc2InstancesState/dev/1522084205509-2018-03-26T17:10:05.509Z/LogEc2InstancesState.zip"
+        },
+        "FunctionName": "LogEc2InstancesChangeState",
+        "Handler": "src/LogEc2InstancesChangeState.handler",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs6.10",
+        "Timeout": 120,
+        "Description": "Log instances change state in ES",
+        "Tags": [
+          {
+            "Key": "project",
+            "Value": "FinOps"
+          },
+          {
+            "Key": "ITOwner",
+            "Value": "frederic.lehmann@transdev.com"
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "elasticsearch_endpoint": "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com",
+            "elasticsearch_index": "ec2startstoplogs",
+            "elasticsearch_type": "ec2startstoplog"
+          }
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            "sg-6aac4d10"
+          ],
+          "SubnetIds": [
+            "subnet-62e00f2a",
+            "subnet-773b1f2c"
+          ]
+        }
+      },
+      "DependsOn": [
+        "LogEc2InstancesChangeStateLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "LogEc2InstancesChangeStateLambdaVersionB5q94rcwSY2prrABb4XgFkeYM0hRlVTDLJBUgtwOroY": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "LogEc2InstancesChangeStateLambdaFunction"
+        },
+        "CodeSha256": "B0JDIZ82b61CqkHxxtMd7P5yJ3a9Gi80uPEx77Ujuv8=",
+        "Description": "Log instances change state in ES"
+      }
+    },
+    "lambdaLogEc2instancesChangeStaterole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "lambda-LogEc2InstancesChangeState",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "lambda.amazonaws.com"
+              ]
+            },
+            "Action": "sts:AssumeRole"
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "lambda_execution_stream",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "lambdaAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": [
+                    "arn:aws:lambda:eu-west-1:716783647419:function:LogEc2InstancesChangeState"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "ec2rights",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:DescribeInstances",
+                    "ec2:DescribeTags",
+                    "ec2:DescribeInstanceStatus",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "esgenericrights",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpGet",
+                    "es:ListDomainNames",
+                    "es:ESHttpPost",
+                    "es:ESHttpPut"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "esaccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:*"
+                  ],
+                  "Resource": [
+                    "arn:aws:es:eu-west-1:716783647419:domain/opstat"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EventRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Name": "LogEc2InstancesChangeState",
+        "Description": "Rule for Loging Ec2 Instances change State in ES",
+        "EventPattern": {
+          "source": [
+            "aws.ec2"
+          ],
+          "detail-type": [
+            "EC2 Instance State-change Notification"
+          ],
+          "detail": {
+            "state": [
+              "stopping",
+              "runnning",
+              "terminated"
+            ]
+          }
+        },
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": "arn:aws:lambda:eu-west-1:716783647419:function:LogEc2InstancesChangeState",
+            "Id": "lambda-LogEc2InstancesChangeState"
+          }
+        ]
+      }
+    },
+    "PermissionForEventsToInvokeLambda": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": "LogEc2InstancesChangeState",
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EventRule",
+            "Arn"
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": "pprod-deploy"
+    },
+    "LogEc2InstancesChangeStateLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "LogEc2InstancesChangeStateLambdaVersionB5q94rcwSY2prrABb4XgFkeYM0hRlVTDLJBUgtwOroY"
+      }
+    }
+  }
+}
