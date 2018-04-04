@@ -1,15 +1,17 @@
 'use strict';
 
 var aws = require('aws-sdk');
+var mydata = {};
+mydata.bucket = {};
 /*var elasticsearch = require('elasticsearch');*/
 
 exports.handler = (event, context, callback) => {
     
     /* Get ElasticSearch connexion data from lambda var*/
-    var mydata ={};
-    mydata.body = {};
-    mydata.index = process.env.elasticsearch_index;
-    mydata.type = process.env.elasticsearch_type;
+    var elasticdata ={};
+    elasticdata.body = {};
+    elasticdata.index = process.env.elasticsearch_index;
+    elasticdata.type = process.env.elasticsearch_type;
     
     /* get bucket list */
     var params = {};
@@ -23,7 +25,34 @@ exports.handler = (event, context, callback) => {
         else {
             for (var i=0;i<data.Buckets.length;i++) {
                 console.log(i," : ",data.Buckets[i].Name);
-                mydata.body[bucket[i].name = data.Buckets[i].Name;
+                mydata.bucket["name"] = data.Buckets[i].Name;
+                
+                var cw = new aws.CloudWatch();
+                var cwparams = {
+                    MetricName: 'BucketSizeBytes',
+                    Namespace: 'AWS/S3',
+                    StartTime: new Date,
+                    EndTime: new Date,
+                    Period: 500,
+                    Dimensions: [
+                        {
+                            Name: 'BucketName',
+                            Value: data.Buckets[i].Name
+                        },
+                        {
+                            Name: 'StorageTYpe',
+                            Value: 'StandardStorage'
+                        },
+                    ],
+                    Statistics: [
+                        'Average',
+                    ],
+                    Unit: 'Gigabytes'
+                };
+                cw.getMetricStatistics(cwparams, function(err, cwdata) {
+                    if (err) console.log(err, err.stack); // an error occurred
+                else     console.log(cwdata);           // successful response
+                });
             }
         }
     });
