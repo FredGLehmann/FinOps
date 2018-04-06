@@ -7,6 +7,9 @@ var StorageType = ["StandardStorage", "StandardIAStorage", " ReducedRedundancySt
 
 var mydata = {};
 mydata.bucket = {};
+
+var esdata = {};
+esdata.body = {};
 /*var elasticsearch = require('elasticsearch');*/
 
 exports.handler = (event, context, callback) => {
@@ -32,7 +35,7 @@ exports.handler = (event, context, callback) => {
                 mydata.bucket["name"] = List.Buckets[i].Name;
                 
                 for (var j=0;j<StorageType.length;j++) {
-                    GetBucketSize(List.Buckets[i].Name,StorageType[j])
+                    GetBucketSize(List.Buckets[i].Name,StorageType[j]);
                 }
                 for (var k=0;k<5;k++) {
                     console.log(".");
@@ -45,9 +48,9 @@ exports.handler = (event, context, callback) => {
 };
 
 
-/* Get the bucket size          */
-/* In : the bucketname          */
-/* Out : the bucket size in Go  */
+/* Get the bucket size                          */
+/* In : the bucketname  and Storage Type        */
+/* Mydata completed                             */
 function GetBucketSize(BucketName,StorageType) {
     
     var startdate = new Date (new Date - 259200000);
@@ -82,12 +85,17 @@ function GetBucketSize(BucketName,StorageType) {
             if (cwdata.Datapoints == "" ) {
                 //console.log("0");           // successful response
                 mydata.bucket[StorageType] = 0;
-                console.log(BucketName," / ",StorageType,":",0)
             } else {
                 //console.log(cwdata.Datapoints[0].Average);           // successful response
                 mydata.bucket[StorageType] = cwdata.Datapoints[0].Average;
-                console.log(BucketName," / ",StorageType,":",mydata.bucket[StorageType])
             }
         }
     });
 }
+
+function PutEsData() {
+    mydata.index = process.env.elasticsearch_index;
+    mydata.type = process.env.elasticsearch_type;
+    
+    esdata.body.name = 
+}    
