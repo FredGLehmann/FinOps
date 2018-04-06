@@ -3,5 +3,5 @@
     "elasticsearch_endpoint": "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.comlocaltable",
     "elasticsearch_index": "ec2startstoplogs",
     "elasticsearch_type": "ec2startstoplog"
-  },
+  }
 }

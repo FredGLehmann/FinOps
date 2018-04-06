@@ -1,52 +1,69 @@
-'use strict';
 
+/* REQUIRE */
 var aws = require('aws-sdk');
+var elasticsearch = require('elasticsearch');
+
+/* SOME VAR */
+var StorageType = ["StandardStorage", "StandardIAStorage", " ReducedRedundancyStorage", "AllStorageTypes"]
+var mydata = {};
+mydata.body = {};
+var totaldata = {};
+totaldata.body = {};
+
+/* SET AWS REGION   */
 aws.config.update({region: 'eu-west-1'});
 
-var StorageType = ["StandardStorage", "StandardIAStorage", " ReducedRedundancyStorage", "AllStorageTypes"]
-
-var mydata = {};
-mydata.bucket = {};
-
-var esdata = {};
-esdata.body = {};
-/*var elasticsearch = require('elasticsearch');*/
-
+/* Let's Go     */
 exports.handler = (event, context, callback) => {
     
-    /* Get ElasticSearch connexion data from lambda var*/
-    var elasticdata ={};
-    elasticdata.body = {};
-    elasticdata.index = process.env.elasticsearch_index;
-    elasticdata.type = process.env.elasticsearch_type;
+    console.log("HOST : ",process.env.elasticsearch_endpoint);
+    
+    /* init the total tab */
+    InitTotaldata();
+    
+    /* include Elasticsearch data in the JSON var   */
+    PutEsData;
     
     /* get bucket list */
-    var params = {};
-    
-    /* Get instance details (Type, Tags,...) */
-    /* var ec2 = new aws.EC2({region: process.env.AWS_REGION});*/
     var s3 = new aws.S3();
     
+    var params = {};
     s3.listBuckets(params, function(err, List) {
         if (err) console.log(err, err.stack); // an error occurred
         else {
+            /* for each bucket get its name */
             for (var i=0;i<List.Buckets.length;i++) {
                 //console.log(i," : ",List.Buckets[i].Name);
-                mydata.bucket["name"] = List.Buckets[i].Name;
+                mydata.body["name"] = List.Buckets[i].Name;
                 
+                /* for each bucket get's the data volume for each storage type */
                 for (var j=0;j<StorageType.length;j++) {
-                    GetBucketSize(List.Buckets[i].Name,StorageType[j]);
+                    GetBucketSize(mydata.body["name"],StorageType[j]);
                 }
-                for (var k=0;k<5;k++) {
+                
+                /* Spend some times t be sure that the data are available*/
+                for (var k=0;k<50;k++) {
                     console.log(".");
                 }
-                //console.log(mydata.bucket);
-                //console.log(mydata.bucket["name"]," / ",mydata.bucket["size"])
+                
+                /* send the data to ES  */
+                SendBucketData;
             }
         }
     });
+    /* Send the data for all the stage  */
+    SendTotalData();
+    
 };
 
+
+function InitTotaldata() {
+    totaldata.body["name"] == "TOTAL_" + process.env.STAGE;
+    
+    for (var j=0;j<StorageType.length;j++) {
+        totaldata.body[StorageType[j]]=0
+    }
+}
 
 /* Get the bucket size                          */
 /* In : the bucketname  and Storage Type        */
@@ -56,7 +73,6 @@ function GetBucketSize(BucketName,StorageType) {
     var startdate = new Date (new Date - 259200000);
     var enddate = new Date (new Date - 172800000);
 
-    
     var cw = new aws.CloudWatch();
     var cwparams = {
         MetricName: 'BucketSizeBytes',
@@ -84,18 +100,65 @@ function GetBucketSize(BucketName,StorageType) {
         else {
             if (cwdata.Datapoints == "" ) {
                 //console.log("0");           // successful response
-                mydata.bucket[StorageType] = 0;
+                mydata.body[StorageType] = 0;
             } else {
                 //console.log(cwdata.Datapoints[0].Average);           // successful response
-                mydata.bucket[StorageType] = cwdata.Datapoints[0].Average;
+                mydata.body[StorageType] = cwdata.Datapoints[0].Average;
+                total.body[StorageType] = total.body[StorageType] + cwdata.Datapoints[0].Average;
             }
         }
     });
 }
 
+/* Integration of Index and Index type data     */
+/* in the JSON variable                         */
 function PutEsData() {
     mydata.index = process.env.elasticsearch_index;
     mydata.type = process.env.elasticsearch_type;
+    totaldata.index = process.env.elasticsearch_index;
+    totaldata.type = process.env.elasticsearch_type;
+}
+
+/* Send the JSON bucket data to Elasticsearch          */
+function SendBucketData() {
     
-    esdata.body.name = 
-}    
+    var elasticclient = new elasticsearch.Client({
+        hosts: [process.env.elasticsearch_endpoint]
+    });
+    
+    /* Visibility test of our ElasticSearch Cluster */
+    elasticclient.ping({requestTimeout: 30000,}, function(error) {
+        if (error) {
+            console.error('Elasticsearch cluster is down !!');
+        } else {
+            console.log('Elasticsearch cluster is reachable !!');
+            console.log(mydata);
+            //elasticclient.index(mydata, function(err,resp,status) {
+            //    if (err) console.log(err, err.stack);
+            //    else console.log("Index Status : ",resp);
+            //});
+        }
+    });
+}
+
+/* Send the JSON total data to Elasticsearch          */
+function SendTotalData() {
+    
+    var elasticclient2 = new elasticsearch.Client({
+        hosts: [process.env.elasticsearch_endpoint]
+    });
+    
+    /* Visibility test of our ElasticSearch Cluster */
+    elasticclient2.ping({requestTimeout: 30000,}, function(error) {
+        if (error) {
+            console.error('Elasticsearch cluster is down !!');
+        } else {
+            console.log('Elasticsearch cluster is reachable !!');
+            console.log(totaldata);
+            //elasticclient2.index(totaldata, function(err,resp,status) {
+            //    if (err) console.log(err, err.stack);
+            //    else console.log("Index Status : ",resp);
+            //});
+        }
+    });
+}
