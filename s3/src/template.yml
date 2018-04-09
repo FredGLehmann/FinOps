@@ -9,3 +9,10 @@ Resources:
     Properties:
       Handler: s3stats.handler
       Runtime: nodejs6.10
+      Timeout: 30
+      Environment:
+        Variables:
+          elasticsearch_endpoint: "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.comlocaltable"
+          elasticsearch_index: "s3stats"
+          elasticsearch_type: "s3stats"
+          STAGE: "DEV"
