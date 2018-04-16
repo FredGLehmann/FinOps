@@ -41,14 +41,14 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
     //console.log("Bucket : ",mydata.body["name"],"Type : ",StorageTypeIndex);
     
     var startdate = new Date (new Date - 259200000);
-    var enddate = new Date (new Date - 172800000);
+    mydata.body["Date"] = new Date (new Date - 172800000);
 
     var cw = new aws.CloudWatch();
     var cwparams = {
         MetricName: 'BucketSizeBytes',
         Namespace: 'AWS/S3',
         StartTime: startdate,
-        EndTime: enddate,
+        EndTime: mydata.body["Date"],
         Period: 7200,
         Dimensions: [
             {
@@ -81,7 +81,7 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
                     return;
                 } else {
                     //console.log("Envoi des données");
-                    SendBucketData(mydata.body["name"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"],mydata.body["AllStorageTypes"]);
+                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"],mydata.body["AllStorageTypes"]);
                     if (BucketNameIndex < List.length-1) {
                         //console.log("Bucket suivant");
                         mydata.body = {};
@@ -98,7 +98,7 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
                     return;
                 } else {
                     //console.log("Envoi des données");
-                    SendBucketData(mydata.body["name"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"]);
+                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"]);
                     if (BucketNameIndex < List.length-1) {
                         //console.log("Bucket suivant");
                         mydata.body = {};
@@ -112,7 +112,7 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
 }
 
 /* Send the JSON bucket data to Elasticsearch          */
-function SendBucketData(name,StandardStorage,StandardIAStorage,ReducedRedundancyStorage) {
+function SendBucketData(name,date,StandardStorage,StandardIAStorage,ReducedRedundancyStorage) {
     
     var esdata = {};
     esdata.body = {};
@@ -121,6 +121,7 @@ function SendBucketData(name,StandardStorage,StandardIAStorage,ReducedRedundancy
     esdata.type = process.env.elasticsearch_type;
     esdata.body["name"] = name;
     esdata.body["stage"] = process.env.STAGE;
+    esdata.body["date"] = date;
     esdata.body["StandardStorage"] = StandardStorage;
     esdata.body["StandardIAStorage"] = StandardIAStorage;
     esdata.body["ReducedRedundancyStorage"] = ReducedRedundancyStorage;
@@ -128,7 +129,7 @@ function SendBucketData(name,StandardStorage,StandardIAStorage,ReducedRedundancy
     var elasticclient = new elasticsearch.Client({
         hosts: [process.env.elasticsearch_endpoint]
     });
-    console.log("Sending data for ",esdata.body["name"]);
+    console.log("Sending data for",esdata.body["name"],"at :",esdata.body["date"]);
     
     /* Visibility test of our ElasticSearch Cluster */
     elasticclient.ping({requestTimeout: 30000,}, function(error) {
@@ -136,7 +137,7 @@ function SendBucketData(name,StandardStorage,StandardIAStorage,ReducedRedundancy
             console.error('Elasticsearch cluster is down !!');
         } else {
             console.log('Elasticsearch cluster is reachable !!');
-            elasticclient.index(mydata, function(err,resp,status) {
+            elasticclient.index(esdata, function(err,resp,status) {
                 if (err) console.log(err, err.stack);
                 else console.log("Index Status : ",resp);
             });
