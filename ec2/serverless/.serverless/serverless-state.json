@@ -124,7 +124,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "pprod-deploy",
-                "S3Key": "serverless/LogEc2InstancesState/dev/1522084205509-2018-03-26T17:10:05.509Z/LogEc2InstancesState.zip"
+                "S3Key": "serverless/LogEc2InstancesState/dev/1523890206421-2018-04-16T14:50:06.421Z/LogEc2InstancesState.zip"
               },
               "FunctionName": "LogEc2InstancesChangeState",
               "Handler": "src/LogEc2InstancesChangeState.handler",
@@ -543,10 +543,10 @@
       },
       "Outputs": {}
     },
-    "artifact": "/home/ec2-user/environment/FinOps/serverless/.serverless/LogEc2InstancesState.zip"
+    "artifact": "/home/ec2-user/environment/FinOps/ec2/serverless/.serverless/LogEc2InstancesState.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/LogEc2InstancesState/dev/1522084205509-2018-03-26T17:10:05.509Z",
+    "artifactDirectoryName": "serverless/LogEc2InstancesState/dev/1523890206421-2018-04-16T14:50:06.421Z",
     "artifact": "LogEc2InstancesState.zip"
   }
 }

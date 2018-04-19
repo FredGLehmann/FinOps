@@ -13,7 +13,7 @@
       "accountId": "716783647419",
       "esEndpoint": "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com",
       "esIndex": "s3stats",
-      "esType": "s3stats",
+      "esType": "sizing",
       "author": "frederic.lehmann@transdev.com",
       "logRetentionInDays": 1,
       "deploymentBucket": "pprod-deploy",
@@ -124,7 +124,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "pprod-deploy",
-                "S3Key": "serverless/S3Stats/dev/1523608204685-2018-04-13T08:30:04.685Z/S3Stats.zip"
+                "S3Key": "serverless/S3Stats/dev/1523915391598-2018-04-16T21:49:51.598Z/S3Stats.zip"
               },
               "FunctionName": "s3stats",
               "Handler": "src/s3stats.handler",
@@ -152,7 +152,8 @@
                 "Variables": {
                   "elasticsearch_endpoint": "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com",
                   "elasticsearch_index": "s3stats",
-                  "elasticsearch_type": "s3stats"
+                  "elasticsearch_type": "sizing",
+                  "STAGE": "dev"
                 }
               },
               "VpcConfig": {
@@ -170,14 +171,14 @@
               "IamRoleLambdaExecution"
             ]
           },
-          "S3statsLambdaVersionUrzBaJHFVf9O9mj98Nbl3dVYxrDCH1CQ7c4L97yc0": {
+          "S3statsLambdaVersion3EhJZqeEmXC64kYo2zPTgFrTs9m0bPQeegoajn87Y": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "S3statsLambdaFunction"
               },
-              "CodeSha256": "RJMY4ikkSwFtiR2hYjVyF8Rn8XzDaQSCAHxjePUjhng=",
+              "CodeSha256": "ZFEkh201wqWuNSoBYB45K6yD0SRRYI6i9WeNdyVfQLc=",
               "Description": "Log volume size by storageytpe in ES"
             }
           },
@@ -371,7 +372,7 @@
           "S3statsLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "S3statsLambdaVersionUrzBaJHFVf9O9mj98Nbl3dVYxrDCH1CQ7c4L97yc0"
+              "Ref": "S3statsLambdaVersion3EhJZqeEmXC64kYo2zPTgFrTs9m0bPQeegoajn87Y"
             }
           }
         }
@@ -390,7 +391,8 @@
         "environment": {
           "elasticsearch_endpoint": "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com",
           "elasticsearch_index": "s3stats",
-          "elasticsearch_type": "s3stats"
+          "elasticsearch_type": "sizing",
+          "STAGE": "dev"
         },
         "events": [],
         "package": {},
@@ -587,7 +589,7 @@
     "artifact": "/home/ec2-user/environment/FinOps/s3/serverless/.serverless/S3Stats.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/S3Stats/dev/1523608204685-2018-04-13T08:30:04.685Z",
+    "artifactDirectoryName": "serverless/S3Stats/dev/1523915391598-2018-04-16T21:49:51.598Z",
     "artifact": "S3Stats.zip"
   }
 }

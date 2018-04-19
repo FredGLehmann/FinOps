@@ -14,7 +14,7 @@ provider:
   region: ${opt:region, 'eu-west-1'}
   esEndpoint: ${opt:esEndpoint, 'https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com'}
   esIndex: ${opt:esIndex, 's3stats'}
-  esType: ${opt:esType, 's3stats'}
+  esType: ${opt:esType, 'sizing'}
   author: ${opt:author}
   logRetentionInDays: 1
   deploymentBucket:
@@ -159,3 +159,4 @@ functions:
         elasticsearch_endpoint: ${self:provider.esEndpoint}
         elasticsearch_index: ${self:provider.esIndex}
         elasticsearch_type: ${self:provider.esType}
+        STAGE: ${self:provider.stage}

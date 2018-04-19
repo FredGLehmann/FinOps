@@ -5,7 +5,7 @@ var client = new elasticsearch.Client({
 });
 
 //client.indices.delete({  
-//  index: 'ec2startstoplogs'
+//  index: 'ec2running'
 //},function(err,resp,status) {
 //  if(err) {
 //    console.log(err);

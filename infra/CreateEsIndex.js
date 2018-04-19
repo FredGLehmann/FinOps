@@ -5,12 +5,22 @@ var client = new elasticsearch.Client({
 });
 
 client.indices.create({  
-  index: 'ec2startstoplogs'
+  index: 'ec2running'
 },function(err,resp,status) {
   if(err) {
     console.log(err);
   }
-  else {
-    console.log("create",resp);
+  else {console.log("create",resp);
   }
 });
+
+//client.indices.create({  
+//  index: 's3stats'
+//},function(err,resp,status) {
+//  if(err) {
+//    console.log(err);
+//  }
+//  else {
+//    console.log("create",resp);
+//  }
+//});
