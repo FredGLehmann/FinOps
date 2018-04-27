@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FinOps serverless application.
+
+Resources:
+
+  handler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambdastats.handler
+      Runtime: nodejs6.10
+      Timeout: 240
+      Environment:
+        Variables:
+          elasticsearch_endpoint: "https://search-opstat-qe4k7okdqmzazjkuwhavu52nyi.eu-west-1.es.amazonaws.com"
+          elasticsearch_index: "s3stats"
+          elasticsearch_type: "sizing"
+          STAGE: "DEV"
