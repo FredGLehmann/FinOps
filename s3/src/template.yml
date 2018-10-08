@@ -7,7 +7,7 @@ Resources:
   handler:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: s3stats.handler
+      Handler: simples3stats.handler
       Runtime: nodejs6.10
       Timeout: 240
       Environment:
