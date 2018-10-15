@@ -1,41 +1,40 @@
 var aws = require('aws-sdk');
 
-var mydata ={};
-//var index = "bucket"
-mydata["bucket"] = [];
+var startdate = new Date (new Date - 259200000);
+var enddate = new Date (new Date - 172800000);
 
-//mydata.index = "INDEX";
-//mydata.type = "INDEX_TYPE";
-    
-    
-//mydata.body.account="ACCOUNT";
-//mydata.body.region="REGION";
-//mydata.body.time="TIME";
-    
-//console.log(mydata);
 
-//mydata.body["account"]="ACCOUNT2";
-//mydata.body["region"]="REGION2";
-//mydata.body["time"]="TIME2";
-
-//console.log(mydata);
-
-var data = {
-    name: 'TOTO',
-    StandardStorage: " 1000"
+var cw = new aws.CloudWatch();
+var cwparams = {
+    MetricName: 'BucketSizeBytes',
+    Namespace: 'AWS/S3',
+    StartTime: startdate,
+    EndTime: enddate,
+    Period: 7200,
+    Dimensions: [
+        {
+            Name: 'BucketName',
+            Value: 'web-transparence'
+        },
+        {
+            Name: 'StorageType',
+            Value: 'StandardStorage'
+         },
+    ],
+    Statistics: [
+        'Average',
+    ],
+    /* Theorically we can use other units, but only bytes works */
+    Unit : 'Bytes'
 };
 
-var data2 = {
-        name: "TATA",
-        StandardStorage: "5000"
-};
-
-mydata["bucket"].push(data);
-mydata["bucket"].push(data2);
-
-console.log(mydata);
-
-
-if (typeof mydata.bucket[2] != 'undefined') {
-    console.log(mydata.bucket[2]);
-}
+cw.getMetricStatistics(cwparams, function(err, cwdata) {
+    //console.log("CallBack - ",mydata.body["name"],StorageType[StorageTypeIndex]);
+    if (err) {
+        console.log("ERROR !!!");
+        console.log(err, err.stack); // an error occurred
+    }
+    else {
+        console.log(cwdata.Datapoints);
+    }
+})

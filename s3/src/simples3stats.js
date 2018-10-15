@@ -3,19 +3,24 @@
 var aws = require('aws-sdk');
 
 /* SOME VAR */
-var StorageType = ["StandardStorage", "StandardIAStorage", "ReducedRedundancyStorage"];
+var StorageType = ["StandardStorage", "StandardIAStorage", "ReducedRedundancyStorage", "OneZoneIAStorage"];
 var mydata = {};
 mydata.body = {};
 var totaldata = {};
 totaldata.body = {};
-var NbBucket;
-var TreaedBucket;
+var NbBucket = 0;
+var TreatedBucket = 0;
 
 /* SET AWS REGION   */
 aws.config.update({region: 'eu-west-1'});
 
 /* Let's Go     */
 exports.handler = (event, context, callback) => {
+    
+    /* Initialize the totaldata var */
+    for (var i in StorageType) {
+        totaldata.body[StorageType[i]] = 0;
+    }
     
     /* get bucket list */
     var s3 = new aws.S3();
@@ -26,12 +31,10 @@ exports.handler = (event, context, callback) => {
         else {
             /* Get the size of each storage type */
             NbBucket = List.Buckets.length;
+            console.log("Bucket(s) to analyze : ",NbBucket);
             GetBucketSize(List.Buckets,0,0);
         }
     });
-    /*console.log("nb de bucket : ",List.Buckets)*/
-    /*SendBucketData(totaldata.body["name"],2,totaldata.body["StandardStorage"],totaldata.body["StandardIAStorage"],totaldata.body["ReducedRedundancyStorage"]);*/
-    
 };
 
 
@@ -67,6 +70,8 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
         Statistics: [
             'Average',
         ],
+        /* Theorically we can use other units, but only bytes works */
+        Unit : 'Bytes'
     };
 
     cw.getMetricStatistics(cwparams, function(err, cwdata) {
@@ -85,8 +90,7 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
                     return;
                 } else {
                     //console.log("Envoi des données");
-                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"]);
-                    TreatedBucket++;
+                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"],mydata.body["OneZoneIAStorage"]);
                     if (BucketNameIndex < List.length-1) {
                         //console.log("Bucket suivant");
                         mydata.body = {};
@@ -104,8 +108,7 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
                     return;
                 } else {
                     //console.log("Envoi des données");
-                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"]);
-                    TreatedBucket++;
+                    SendBucketData(mydata.body["name"],mydata.body["Date"],mydata.body["StandardStorage"],mydata.body["StandardIAStorage"],mydata.body["ReducedRedundancyStorage"],mydata.body["OneZoneIAStorage"]);
                     if (BucketNameIndex < List.length-1) {
                         //console.log("Bucket suivant");
                         mydata.body = {};
@@ -118,46 +121,31 @@ function GetBucketSize(List,BucketNameIndex,StorageTypeIndex) {
     });
 }
 
-/* try to calculate the total amount of data in each Storage class  */
-/* IN : StorageClass and storagesize                                */
-/* OUT : NOTHING                                                    */
-function TotalbyClass(StdStoSize,StdIASize,RrsSize) {
-    totaldata.body["StandardStorage"] = +StdStoSize;
-    totaldata.body["StandardIAStorage"] = +StdIASize;
-    totaldata.body["ReduceRedundancyStorage"] = +RrsSize;
-}
-
 /* Send the JSON bucket data to Elasticsearch          */
-function SendBucketData(name,date,StandardStorage,StandardIAStorage,ReducedRedundancyStorage) {
+function SendBucketData(name,date,StandardStorage,StandardIAStorage,ReducedRedundancyStorage,OneZoneIAStorage) {
     
-    var esdata = {};
-    esdata.body = {};
+    /* console.log(name,"Std :",StandardStorage,"- StdIA :",StandardIAStorage,"- Rrs :",ReducedRedundancyStorage,"- OnezoneIA :",OneZoneIAStorage);*/
     
-    esdata.index = process.env.elasticsearch_index;
-    esdata.type = process.env.elasticsearch_type;
-    esdata.body["name"] = name;
-    esdata.body["stage"] = process.env.STAGE;
-    esdata.body["date"] = date;
-    esdata.body["StandardStorage"] = StandardStorage;
-    esdata.body["StandardIAStorage"] = StandardIAStorage;
-    esdata.body["ReducedRedundancyStorage"] = ReducedRedundancyStorage;
+    totaldata.body["StandardStorage"] = totaldata.body["StandardStorage"] + StandardStorage;
+    totaldata.body["StandardIAStorage"] = totaldata.body["StandardIAStorage"]  + StandardIAStorage;
+    totaldata.body["ReduceRedundancyStorage"] = totaldata.body["ReducedRedundancyStorage"] + ReducedRedundancyStorage;
+    totaldata.body["OneZoneIAStorage"] = totaldata.body["OneZoneIAStorage"] + OneZoneIAStorage;
     
-    /*var elasticclient = new elasticsearch.Client({
-        hosts: [process.env.elasticsearch_endpoint]
-    });*/
-    /*console.log("Sending data for",esdata.body["name"],"at :",esdata.body["date"]);*/
-    console.log(name,"Std :",StandardStorage,"- StdIA :",StandardIAStorage,"- Rrs :",ReducedRedundancyStorage)
+    /*console.log("Increment total - S3Standard :",totaldata.body["StandardStorage"],"- S3StandardIA :",totaldata.body["StandardIAStorage"],"- S3ReducedRedundancy :",totaldata.body["ReduceRedundancyStorage"],"- OnezoneIAStorage :",totaldata.body["OneZoneIAStorage"]);*/
     
-    /* Visibility test of our ElasticSearch Cluster
-    elasticclient.ping({requestTimeout: 30000,}, function(error) {
-        if (error) {
-            console.error('Elasticsearch cluster is down !!');
-        } else {
-            console.log('Elasticsearch cluster is reachable !!');
-            elasticclient.index(esdata, function(err,resp,status) {
-                if (err) console.log(err, err.stack);
-                else console.log("Data sended");
-            });
+    TreatedBucket = TreatedBucket + 1;
+    /*console.log("nb de bucket traité : ",TreatedBucket);*/
+
+    /* If all the buckets are analyzed, we publish the total amount of data */
+    if (TreatedBucket == NbBucket) {
+        
+        /* For readable log, we transfrom bytes values in gigabytes and round to 2 digits */
+         for (var i in StorageType) {
+            totaldata.body[StorageType[i]] = totaldata.body[StorageType[i]]/1024/1024/1024;
+            totaldata.body[StorageType[i]] = totaldata.body[StorageType[i]].toFixed(2);
         }
-    });*/
+        
+        /* and then publish it */
+        console.log("Total data amount (in Gigabytes) - S3Standard :",totaldata.body["StandardStorage"],"- S3StandardIA :",totaldata.body["StandardIAStorage"],"- S3ReducedRedundancy :",totaldata.body["ReducedRedundancyStorage"],"- OnezoneIAStorage :",totaldata.body["OneZoneIAStorage"]);
+    }
 }
